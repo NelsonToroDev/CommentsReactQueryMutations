@@ -1,5 +1,5 @@
 import './App.css'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, Query } from '@tanstack/react-query'
 import { FormInput, FormTextArea } from './components/Form'
 import { getComments, CommentWithId, postComment } from './service/comments'
 import { Results } from './components/Results'
@@ -17,10 +17,44 @@ function App () {
   const { mutate, isPending: isLoadingMutation } = useMutation({
     mutationFn: postComment,
     onSuccess: async (newComment) => {
-      // 1. Update the cached data manually
-      await queryClient.setQueryData(['comments'], (oldData?: CommentWithId[]) => {
+      // 1. Update the cached data manually. avoid refetching data
+      // await queryClient.setQueryData(['comments'], (oldData?: CommentWithId[]) => {
+      //   if (oldData == null) return [newComment]
+      //   return [...oldData, newComment]
+      // })
+
+      // 2. Invalidate the cached data and refetch again
+      // await queryClient.invalidateQueries({
+      //   queryKey: ['comments']
+      // })
+
+    },
+    onMutate: async (newComment) => {
+      // 3. Optimistic update
+      await queryClient.cancelQueries({
+        queryKey: ['commnets']
+      })
+
+      // To rollback to previous state
+      const previousComments = queryClient.getQueryData(['comments'])
+
+      queryClient.setQueryData(['comments'], (oldData?: CommentWithId[]) => {
         if (oldData == null) return [newComment]
         return [...oldData, newComment]
+      })
+
+      return { previousComments }
+    },
+    onError: (error, context) => {
+      console.log(error)
+      if (context?.previousComments != null) {
+        queryClient.setQueryData(['commnets'], context.previousComments)
+      }
+    },
+    onSettled: async () => {
+      // after to onMutate or onError and after to apply optimistic update or revert, we invalidate to data to refetch automatially
+      await queryClient.invalidateQueries({
+        queryKey: ['commnets']
       })
     }
   })
