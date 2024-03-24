@@ -4,7 +4,6 @@ module.exports = {
     es2021: true
   },
   extends: [
-    './node_modules/ts-standard/eslintrc',
     'standard-with-typescript',
     'plugin:react/recommended'
   ],
@@ -27,6 +26,7 @@ module.exports = {
     project: '[./tsconfig.json, ./.eslintrc.cjs]'
   },
   plugins: [
+    '@typescript-eslint',
     'react'
   ],
   rules: {
