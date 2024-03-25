@@ -32,15 +32,18 @@ function App () {
     onMutate: async (newComment) => {
       // 3. Optimistic update
       await queryClient.cancelQueries({
-        queryKey: ['commnets']
+        queryKey: ['comments']
       })
 
       // To rollback to previous state
       const previousComments = queryClient.getQueryData(['comments'])
 
       queryClient.setQueryData(['comments'], (oldData?: CommentWithId[]) => {
-        if (oldData == null) return [newComment]
-        return [...oldData, newComment]
+        const newCommentToAdd = structuredClone(newComment)
+        newCommentToAdd.preview = true
+
+        if (oldData == null) return [newCommentToAdd]
+        return [...oldData, newCommentToAdd]
       })
 
       return { previousComments }
@@ -48,13 +51,13 @@ function App () {
     onError: (error, context) => {
       console.log(error)
       if (context?.previousComments != null) {
-        queryClient.setQueryData(['commnets'], context.previousComments)
+        queryClient.setQueryData(['comments'], context.previousComments)
       }
     },
     onSettled: async () => {
       // after to onMutate or onError and after to apply optimistic update or revert, we invalidate to data to refetch automatially
       await queryClient.invalidateQueries({
-        queryKey: ['commnets']
+        queryKey: ['comments']
       })
     }
   })

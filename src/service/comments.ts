@@ -31,6 +31,9 @@ export const getComments = async () => {
 const delay = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms))
 
 export const postComment = async (comment: Comment) => {
+  // await delay(1000)
+  // throw new Error('Force to undo the optimistic update')
+
   const comments = await getComments()
 
   const id = crypto.randomUUID()
